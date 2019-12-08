@@ -26,7 +26,8 @@ const changeVals = (arr, opidx, input) => {
     } else if (instr === 2) {
         arr[arr[opidx[0] + 3]] = p1value * p2value;
     } else if (instr === 3) {
-        arr[arr[opidx[0] + 1]] = input;
+        console.log("Input!");
+        arr[arr[opidx[0] + 1]] = input.shift();
     } else if (instr === 4) {
         return arr[arr[opidx[0] + 1]];
     } else if (instr === 5) {
@@ -82,7 +83,7 @@ fs.readFile('Day 5/solution.txt', 'utf-8', (err, data) => {
     if (err) throw err;
     const splitData = data.split(",").map(Number);
     let opcode = 0;
-    let input = 5;
+    let input = [15,-3];
     // console.log(splitData);
     opcode = [0];
     let complete = false;
@@ -90,7 +91,8 @@ fs.readFile('Day 5/solution.txt', 'utf-8', (err, data) => {
     // console.log(nvarr);
     while (complete == false) {
     // for (let i = 0; i < 10; i++) {
-        // console.log(nvarr);
+        console.log(opcode[0]);
+        console.log(nvarr);
         let lelength = getLength(nvarr, opcode[0]);
         // console.log("Length: " + opcode[0] + "|" + lelength);
         let output = changeVals(nvarr, opcode, input);
