@@ -10,7 +10,7 @@ const changeVals = (arr, opidx, input) => {
         p2mode = Math.floor(op / 1000 % 10);
         p3mode = Math.floor(op / 10000 % 10);
     }
-    console.log("Instr:" + instr + "|" + opidx);
+    // console.log("Instr:" + instr + "|" + opidx);
     // console.log(p1mode + "|" + p2mode + "|" + p3mode);
     let p1value = arr[arr[opidx[0] + 1]];
     let p2value = arr[arr[opidx[0] + 2]];
@@ -85,16 +85,19 @@ const getLength = (arr, opidx) => {
     }
 }
 
-fs.readFile('Day 7/solution.txt', 'utf-8', (err, data) => {
-    if (err) throw err;
-    const splitData = data.split(",").map(Number);
-    let opcode = 0;
-    let continput = 0;
-    // console.log(splitData);
-    // console.log(nvarr);
-    const evalString = (nvarr, input) => {
-        opcode = [0];
+class IntCode {
+    constructor () {
+        this.status = "";
+        this.settings = currentSetting;
+        this.state = [...splitData];
+        this.pos = 0;
+        this.input = [];
+        this.currInput = [obj.settings[0], continput];
+    }
+    evalString () {
         let complete = false;
+        const opcode = [this.pos];
+        const nvarr = this.state;
         // let nvarr = [...splitData]
         let currOutput;
         while (complete == false) {
@@ -104,7 +107,7 @@ fs.readFile('Day 7/solution.txt', 'utf-8', (err, data) => {
             let lelength = getLength(nvarr, opcode[0]);
             // console.log("Length: " + opcode[0] + "|" + lelength);
             // console.log(input);
-            console.log(nvarr);
+            // console.log(nvarr);
             let output = changeVals(nvarr, opcode, input);
             if (output == "done") {
                 // console.log("First slot: " + nvarr[0]);
@@ -119,6 +122,59 @@ fs.readFile('Day 7/solution.txt', 'utf-8', (err, data) => {
                     }
                 };
             } else if (output == "waiting") {
+                // console.log(currOutput);
+                return {
+                    status: "waiting",
+                    output: currOutput,
+                    newobj: {
+                        settings: input,
+                        state: nvarr,
+                        pos: opcode[0],
+                    }
+                };
+            } else if (output) {
+                continput = output;
+                currOutput = output;
+            }
+            opcode[0] += Number(lelength);
+        }
+    }
+}
+
+fs.readFile('Day 7/solution.txt', 'utf-8', (err, data) => {
+    if (err) throw err;
+    const splitData = data.split(",").map(Number);
+    let continput = 0;
+    // console.log(splitData);
+    // console.log(nvarr);
+    const evalString = (nvarr, input, opcode) => {
+        let complete = false;
+        console.log(opcode);
+        // let nvarr = [...splitData]
+        let currOutput;
+        while (complete == false) {
+        // for (let i = 0; i < 10; i++) {
+            // console.log(opcode[0]);
+            // console.log(nvarr);
+            let lelength = getLength(nvarr, opcode[0]);
+            // console.log("Length: " + opcode[0] + "|" + lelength);
+            // console.log(input);
+            // console.log(nvarr);
+            let output = changeVals(nvarr, opcode, input);
+            if (output == "done") {
+                // console.log("First slot: " + nvarr[0]);
+                complete = true;
+                return {
+                    status: "done",
+                    output: currOutput,
+                    newobj: {
+                        settings: input,
+                        state: nvarr,
+                        pos: opcode[0],
+                    }
+                };
+            } else if (output == "waiting") {
+                // console.log(currOutput);
                 return {
                     status: "waiting",
                     output: currOutput,
@@ -165,6 +221,7 @@ fs.readFile('Day 7/solution.txt', 'utf-8', (err, data) => {
         let objslist = [];
         for (let i = 0; i < 5; i++) {
             objslist.push({
+                status: "",
                 settings:currentSetting,
                 state: [...splitData],
                 pos:0,
@@ -180,15 +237,25 @@ fs.readFile('Day 7/solution.txt', 'utf-8', (err, data) => {
                 //     continue;
                 // }
                 console.log(continput);
-                const toutput = evalString(obj.state, [obj.settings[0], continput]);
+                let currInput = [obj.settings[0], continput];
+                if (obj.status == "waiting") {
+                    currInput.shift();
+                }
+                console.log("pos: " + obj.pos);
+                const toutput = evalString(obj.state, currInput, [obj.pos]);
                 let output;
                 let newobj;
+                let newpos;
                 let status;
                 if (toutput) {
                     status = toutput.status;
                     output = toutput.output;
                     newobj = toutput.newobj;
+                    newpos = toutput.newobj.pos;
                 }
+                obj.status = toutput.status;
+                obj.state = newobj.state;
+                obj.pos = newpos;
                 currentIter++;
                 // console.log(newobj);
                 obj.settings = rotate(obj.settings);
