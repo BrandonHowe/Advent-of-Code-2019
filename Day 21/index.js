@@ -5,8 +5,8 @@ let relbase = 0;
 
 const display = (arr) => {
     let printString = "";
-    for (let thing of arr) {
-        for (let char of thing) {
+    // for (let thing of arr) {
+        for (let char of arr) {
             if (char == 0) {
                 printString += " ";
             } else if (char == 1) {
@@ -18,11 +18,11 @@ const display = (arr) => {
             } else if (char == 4) {
                 printString += "O";
             } else {
-                printString += "A";
+                printString += char + " ";
             }
         }
         printString += "\n";
-    }
+    // }
     return printString;
 }
 const changeVals = (arr, opidx, input) => {
@@ -209,7 +209,7 @@ const convertString = (string) => {
     return result;
 }
 
-fs.readFile('Day 0/solution.txt', 'utf-8', (err, data) => {
+fs.readFile('Day 21/solution.txt', 'utf-8', (err, data) => {
     if (err) throw err;
     let splitData = data.split(",").map(Number);
     let opcode = [0];
@@ -217,4 +217,12 @@ fs.readFile('Day 0/solution.txt', 'utf-8', (err, data) => {
     for (let i = 0; i < splitData.length; i++) {
         nvarr[i] = splitData[i];
     }
+    let input = [];
+    let command = "NOT H J\nOR  C J\nAND B J\nAND A J\nNOT J J\nAND D J\nRUN\n";
+    for (let i = 0; i < command.length; i++) {
+        input.push(command.charCodeAt(i));
+    }
+    console.log(input);
+    let output = intcode(nvarr, opcode, input);
+    console.log(display(output));
 })
