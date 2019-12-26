@@ -1,295 +1,244 @@
 const fs = require('fs');
+const _ = require("lodash");
 
-const movePiece = (currentPos, board, dir) => {
-    switch (dir) {
+const display = (arr) => {
+    let printString = "";
+    for (let thing of arr) {
+        for (let char of thing) {
+            if (char == 0) {
+                printString += ".";
+            } else if (char == 1) {
+                printString += "#";
+            } else if (char == 2) {
+                printString += "A";
+            } else if (char == 3) {
+                printString += "U";
+            } else if (char == 4) {
+                printString += "O";
+            } else if (char == -1) {
+                printString += " ";
+            } else {
+                printString += char;
+            }
+        }
+        printString += "\n";
+    }
+    return printString;
+}
+
+const deleteIndex = (arr, match) => {
+    for (let i in arr) {
+        if (arr[i] == match) {
+            arr.splice(i, 1);
+        }
+    }
+}
+
+const replaceIndex = (arr, match, dest) => {
+    for (let i in arr) {
+        i = +i;
+        for (let j in arr[i]) {
+            j = +j;
+            if (arr[i][j] == match) {
+                arr[i][j] = dest;
+            }
+        }
+    }
+}
+
+const genBoard = (base, keys, currentLoc) => {
+    let newbase = [];
+    for (let row of base) {
+        newbase.push([...row]);
+    }
+    replaceIndex(newbase, "@", ".");
+    for (let value of keys) {
+        replaceIndex(newbase, value.toLowerCase(), ".");
+        replaceIndex(newbase, value.toUpperCase(), ".");
+    }
+    newbase[currentLoc.y][currentLoc.x] = "@";
+    return newbase;
+}
+
+const move = (iboard, keys, currentLoc, direction) => {
+    let board = [];
+    for (let row of iboard) {
+        board.push([...row]);
+    }
+    switch (direction) {
         case 0:
-            if (board[currentPos.y - 1][currentPos.x] == 0) {
-                board[currentPos.y][currentPos.x] = 0; 
-                currentPos.y--;
-                board[currentPos.y][currentPos.x] = 2; 
-            } else if (board[currentPos.y - 1][currentPos.x] > 28) {
-                let door = false;
-                for (let i in board) {
-                    for (let j in board[i]) {
-                        if (board[i][j] == board[currentPos.y - 1][currentPos.x] - 25) {
-                            door = true;
-                            board[i][j] = 0;
-                            board[currentPos.y][currentPos.x] = 0; 
-                            currentPos.y--;
-                            board[currentPos.y][currentPos.x] = 2; 
-                        };
-                    }
-                }
-                if (door === false) {
-                    board[currentPos.y][currentPos.x - 1] = 0; 
-                    board[currentPos.y][currentPos.x] = 0; 
-                    currentPos.x--;
-                    board[currentPos.y][currentPos.x] = 2;  
+            if (board[currentLoc.y - 1][currentLoc.x] != "#") {
+                if (board[currentLoc.y - 1][currentLoc.x] == ".") {
+                    replaceIndex(board, "@", ".");
+                    board[currentLoc.y - 1][currentLoc.x] = "@";
+                    currentLoc.y--;
+                } else if (board[currentLoc.y - 1][currentLoc.x].toLowerCase() === board[currentLoc.y - 1][currentLoc.x] && board[currentLoc.y - 1][currentLoc.x] != "@") {
+                    keys.push(board[currentLoc.y - 1][currentLoc.x]);
+                    replaceIndex(board, "@", ".");
+                    board[currentLoc.y - 1][currentLoc.x] = "@";
+                    currentLoc.y--;
                 }
             }
             break;
         case 1:
-            if (board[currentPos.y][currentPos.x + 1] < 1) {
-                board[currentPos.y][currentPos.x] = 0; 
-                currentPos.x++;
-                board[currentPos.y][currentPos.x] = 2; 
-            } else if (board[currentPos.y][currentPos.x + 1] > 28) {
-                let door = false;
-                for (let i in board) {
-                    for (let j in board[i]) {
-                        if (board[i][j] == board[currentPos.y][currentPos.x + 1] - 32) {
-                            door = true;
-                            board[i][j] = 0; 
-                            board[currentPos.y][currentPos.x] = 0; 
-                            currentPos.x++;
-                            board[currentPos.y][currentPos.x] = 2;   
-                        };
-                    }
-                }
-                if (door === false) {
-                    board[currentPos.y][currentPos.x - 1] = 0; 
-                    board[currentPos.y][currentPos.x] = 0; 
-                    currentPos.x--;
-                    board[currentPos.y][currentPos.x] = 2;  
+            if (board[currentLoc.y][currentLoc.x + 1] != "#") {
+                if (board[currentLoc.y][currentLoc.x + 1] == ".") {
+                    replaceIndex(board, "@", ".");
+                    board[currentLoc.y][currentLoc.x + 1] = "@";
+                    currentLoc.x++;
+                } else if (board[currentLoc.y][currentLoc.x + 1].toLowerCase() === board[currentLoc.y][currentLoc.x + 1] && board[currentLoc.y][currentLoc.x + 1] != "@") {
+                    keys.push(board[currentLoc.y][currentLoc.x + 1]);
+                    replaceIndex(board, "@", ".");
+                    board[currentLoc.y][currentLoc.x + 1] = "@";
+                    currentLoc.x++;
                 }
             }
             break;
         case 2:
-            if (board[currentPos.y + 1][currentPos.x] < 1) {
-                board[currentPos.y][currentPos.x] = 0; 
-                currentPos.y++;
-                board[currentPos.y][currentPos.x] = 2; 
-            } else if (board[currentPos.y + 1][currentPos.x] > 28) {
-                let door = false;
-                for (let i in board) {
-                    for (let j in board[i]) {
-                        if (board[i][j] == board[currentPos.y + 1][currentPos.x] - 32) {
-                            door = true;
-                            board[i][j] = 0; 
-                            board[currentPos.y][currentPos.x] = 0; 
-                            currentPos.y++;
-                            board[currentPos.y][currentPos.x] = 2;   
-                        };
-                    }
-                }
-                if (door === false) {
-                    board[currentPos.y][currentPos.x - 1] = 0; 
-                    board[currentPos.y][currentPos.x] = 0; 
-                    currentPos.x--;
-                    board[currentPos.y][currentPos.x] = 2;  
+            if (board[currentLoc.y + 1][currentLoc.x] != "#") {
+                if (board[currentLoc.y + 1][currentLoc.x] == ".") {
+                    replaceIndex(board, "@", ".");
+                    board[currentLoc.y + 1][currentLoc.x] = "@";
+                    currentLoc.y++;
+                } else if (board[currentLoc.y + 1][currentLoc.x].toLowerCase() === board[currentLoc.y + 1][currentLoc.x] && board[currentLoc.y + 1][currentLoc.x] != "@") {
+                    keys.push(board[currentLoc.y + 1][currentLoc.x]);
+                    replaceIndex(board, "@", ".");
+                    board[currentLoc.y + 1][currentLoc.x] = "@";
+                    currentLoc.y++;
                 }
             }
             break;
         case 3:
-            if (board[currentPos.y][currentPos.x - 1] < 1) {
-                board[currentPos.y][currentPos.x] = 0; 
-                currentPos.x--;
-                board[currentPos.y][currentPos.x] = 2; 
-            } else if (board[currentPos.y][currentPos.x - 1] > 28) {
-                let door = false;
-                for (let i in board) {
-                    for (let j in board[i]) {
-                        if (board[i][j] == board[currentPos.y][currentPos.x - 1] - 32) {
-                            door = true;
-                            board[i][j] = 0; 
-                            board[currentPos.y][currentPos.x] = 0; 
-                            currentPos.x--;
-                            board[currentPos.y][currentPos.x] = 2;   
-                        };
-                    }
-                }
-                if (door === false) {
-                    board[currentPos.y][currentPos.x - 1] = 0; 
-                    board[currentPos.y][currentPos.x] = 0; 
-                    currentPos.x--;
-                    board[currentPos.y][currentPos.x] = 2;  
+            if (board[currentLoc.y][currentLoc.x - 1] != "#") {
+                if (board[currentLoc.y][currentLoc.x - 1] == ".") {
+                    replaceIndex(board, "@", ".");
+                    board[currentLoc.y][currentLoc.x - 1] = "@";
+                    currentLoc.x--;
+                } else if (board[currentLoc.y][currentLoc.x - 1].toLowerCase() === board[currentLoc.y][currentLoc.x - 1] && board[currentLoc.y][currentLoc.x - 1] != "@") {
+                    keys.push(board[currentLoc.y][currentLoc.x - 1]);
+                    replaceIndex(board, "@", ".");
+                    board[currentLoc.y][currentLoc.x - 1] = "@";
+                    currentLoc.x--;
                 }
             }
             break;
     }
 }
 
+function isLetter(str) {
+  return str.length === 1 && str.match(/[a-z]/i);
+}
+
+const countKeys = (board) => {
+    let total = 0;
+    let seen = [];
+    for (let row of board) {
+        for (let value of row) {
+            if (seen.indexOf(value.toLowerCase()) === -1 && isLetter(value)) {
+                seen.push(value.toLowerCase());
+                total++;
+            }
+        }
+    }
+    return total;
+}
+
 fs.readFile('Day 18/solution.txt', 'utf-8', (err, data) => {
     if (err) throw err;
     let splitData = data.split("\n").map(l => l.split(""));
-    console.log(splitData)
+    // //console.log(splitData);
     let currentPos = {x: 0, y: 0};
-    let board = [];
     for (let i in splitData) {
-        board.push([]);
+        i = +i;
+        //console.log(typeof i);
         for (let j in splitData[i]) {
-            switch (splitData[i][j]) {
-                case ".":
-                    board[i].push(0);
-                    break
-                case "#":
-                    board[i].push(1);
-                    break;
-                case "@":
-                    currentPos.x = +j;
-                    currentPos.y = +i;
-                    board[i].push(2);
-                    break;
-                default:
-                    board[i].push(splitData[i][j].charCodeAt(0) - 62);
-                    break;
+            j = +j
+            if (splitData[i][j] == "@") {
+                currentPos.y = i;
+                currentPos.x = j;
             }
         }
     }
-    const craftBoard = (currPos, hit) => {
-        let board = [];
-        for (let i in splitData) {
-            board.push([]);
-            for (let j in splitData[i]) {
-                switch (splitData[i][j]) {
-                    case ".":
-                        board[i].push(0);
-                        break
-                    case "#":
-                        board[i].push(1);
-                        break;
-                    case "@":
-                        board[i].push(0);
-                        break;
-                    default:
-                        let bad = false;
-                        for (let value of hit) {
-                            if (value.toLowerCase() == splitData[i][j].toLowerCase()) {
-                                bad = true;
-                            }
-                        }
-                        if (bad == false) {
-                            board[i].push(splitData[i][j].charCodeAt(0) - 62);
-                        }
-                        break;
+    replaceIndex(splitData, "@", ".");
+    let totalKeys = countKeys(splitData);
+    //console.log(display(splitData));
+    let smallestDist = 999999999;
+    let keys = [];
+    let states = [{keys: [...keys], currentPos: {...currentPos}, dist: 1}];
+    let newstates = [];
+    for (let i = 0; i < 500; i++) {
+        console.log(i + "th iteration: " + states.length);
+        for (let value of states) {
+            let oldvalue = {}
+            for (let j = 0; j < 4; j++) {
+                oldvalue.keys = [...value.keys];
+                oldvalue.currentPos = {...value.currentPos};
+                oldvalue.dist = i;
+                let leboard = genBoard([...splitData], oldvalue.keys, oldvalue.currentPos)
+                // console.log(display(leboard));
+                move(genBoard([...leboard], oldvalue.keys, oldvalue.currentPos), oldvalue.keys, oldvalue.currentPos, j);
+                // console.log(oldvalue);
+                // console.log(value);
+                // console.log("\n");
+                if (_.isEqual(oldvalue.keys, value.keys) == false || _.isEqual(oldvalue.currentPos, value.currentPos) == false) {
+                    // if (_.isEqual(oldvalue.keys, value.keys) == true && _.isEqual(oldvalue.currentPos, value.currentPos) == true) {
+
+                    // } else {
+                        newstates.push({keys: [...oldvalue.keys],   currentPos: {...oldvalue.currentPos}, dist: i});
+                    // }
+                    // console.log(newstates.length);
                 }
             }
         }
-        board[currPos.y][currPos.x] = 2;
-        return board;
-    }
-    const checkBoard = (input) => {
-        let tempPos = {...currentPos}
-        let tempboard = [];
-        for (let row of board) {
-            tempboard.push([...row]);
+        for (let value of newstates) {
+            let newval  = {...value};
+            newval.dist = i + 1;
+            states.push(newval);
         }
-        for (let value of input) {
-            movePiece(tempPos, tempboard, value);
-            // console.log(tempPos);
-        }
-        // console.log(board);
-        for (let row of tempboard) {
-            for (let val of row) {
-                if (+val > 2) {
-                    return false;
+        states = _.uniqWith(states, _.isEqual);
+        for (let i in states) {
+            for (let j in states) {
+                if (i == j) {
+                    continue;
                 }
-            }
-        }
-        return true;
-    }
-    const checkBoardFor = (board, input, target) => {
-        let tempPos = {...currentPos}
-        let tempboard = [];
-        for (let row of board) {
-            tempboard.push([...row]);
-        }
-        for (let value of input) {
-            movePiece(tempPos, tempboard, value);
-            // console.log(tempPos);
-        }
-        // console.log(board);
-        for (let row of tempboard) {
-            for (let val of row) {
-                if (+val == target.charCodeAt(0) - 62) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-    const actuallyWorks = (board, input) => {
-        let tempPos = {...currentPos};
-        let tempboard = [];
-        for (let row of board) {
-            tempboard.push([...board]);
-        }
-        for (let i = 0; i < input.length - 1; i++) {
-            movePiece(tempPos, tempboard, input[i]);
-        }
-        let prevArr = [];
-        for (let row of tempboard) {
-            prevArr.push([...row]);
-        }
-        movePiece(tempPos, tempboard, input[input.length - 1]);
-        // console.log(prevArr);
-        // console.log(board);
-        for (let i in prevArr) {
-            for (let j in prevArr[i]) {
-                if (prevArr[i][j] != tempboard[i][j]) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-    const findHit = (board) => {
-        for (let row of board) {
-            for (let value of board) {
-                
-            }
-        }
-    }
-    let layerNum = 0;
-    let currentLayer = [{pos: [21, 21], hit: []}];
-    let newLayer = [];
-    const findPath = (target) => {
-        let iter = 0;
-        for (let j = 0; j < 5; j++) {
-        // while (true) {
-            layerNum++;
-            console.log("Depth: " + layerNum);
-            console.log("State count: " + currentLayer.length);
-            console.log(currentLayer[currentLayer.length - 1])
-            for (let input of currentLayer) {
-                for (let i = 0; i < 4; i++) {
-                    // console.log(newinput + "|" + i);
-                    let newinput = [i];
-                    let newboard = craftBoard(input.pos, input.hit);
-                    // console.log(newinput);
-                    // console.log(actuallyWorks(newinput));
-                    if (actuallyWorks(newboard, newinput) == true) {
-                        if (checkBoardFor(newboard, newinput, target) === true) {
-                            console.log("Success!");
-                            return newinput;
+                if (_.isEqual(states[i].currentPos,states[j].currentPos)) {
+                    if (_.isEqual(states[i].keys, states[j].keys)) {
+                        if (states[i].dist < states[j].dist) {
+                            states.splice(j, 1);
+                            j--;
+                        } else {
+                            states.splice(i, 1);
+                            i--;
                         }
-                        let output = {};
-                        switch (i) {
-                            case 0:
-                                output.pos = {x: input.pos.x, y: input.pos.y - 1};
-                                break;
-                            case 1:
-                                output.pos = {x: input.pos.x + 1, y: input.pos.y};
-                                break;
-                            case 2:
-                                output.pos = {x: input.pos.x, y: input.pos.y + 1};
-                                break;
-                            case 3:
-                                output.pos = {x: input.pos.x - 1, y: input.pos.y};
-                                break;
-                        }
-                        output.hit = input.hit;
-                        newLayer.push(output);
                     }
                 }
             }
-            currentLayer = [...newLayer];
-            newLayer = [];
-            iter++;
+        }
+        for (let row of states) {
+            if (row.keys.length == totalKeys) {
+                console.log(row.dist);
+                if (row.dist < smallestDist) {
+                    return;
+                    break;
+                    smallestDist = row.dist;
+                }
+            }
+        }
+        // console.log(states);
+        newstates = [];
+    }
+    // //console.log(newstates);
+    console.log(keys);
+    console.log(currentPos);
+    // //console.log(_.uniqWith(states, _.isEqual));
+    for (let row of states) {
+        if (row.keys.length == totalKeys) {
+            console.log(row.dist);
+            if (row.dist < smallestDist) {
+                smallestDist = row.dist;
+            }
         }
     }
-    // console.log(currentLayer);
-    console.log(findPath("a").length);
-    // movePiece(currentPos, board, 1);
-    console.log(checkBoard([1,1,3,3,3,3,3,3]));
+    console.log("Smallest distance: " + smallestDist);
+    //console.log(display(genBoard(splitData, keys, currentPos)));
 })
